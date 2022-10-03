@@ -3,6 +3,7 @@ from . import views
 
 
 urlpatterns = [
-    path("api/content/", views.ContentView.as_view())
-
+    path("contents/", views.ContentView.as_view()),
+    path("contents/<int:content_id>/", views.ContentDetails.as_view()),
+    path("contents/filter/", views.ContentFilter.as_view())
 ]
