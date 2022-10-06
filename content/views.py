@@ -3,6 +3,8 @@ from pyexpat import model
 from rest_framework.views import APIView, Request, Response, status
 from django.forms.models import model_to_dict
 
+from content.validator import ContentValidator
+
 from .models import Content
 from . import views
 import content
@@ -17,11 +19,15 @@ class ContentView(APIView):
 
     def post(self, request: Request) -> Response:
         try:
-            content = Content.objects.create(**request.data)
-            content_dict = model_to_dict(content)
-            return Response(content_dict, status.HTTP_201_CREATED)
-        except:
-            return Response({"details": "invalid field, check fields"}, status.HTTP_400_BAD_REQUEST)
+            content_validated = ContentValidator(**request.data)
+            print(content_validated)
+            if content_validated.is_valid() == True:
+                content = Content.objects.create(**request.data)
+                content_dict = model_to_dict(content)
+                return Response(content_dict, status.HTTP_201_CREATED)
+            raise KeyError
+        except KeyError:
+            return Response({"details": content_validated.errors}, status.HTTP_400_BAD_REQUEST)
 
 
 class ContentDetails(APIView):
@@ -61,7 +67,8 @@ class ContentFilter(APIView):
     def get(self, request: Request) -> Response:
         try:
             title = request.query_params.get('title', None)
-            content = Content.objects.filter(title__gte=title)
+
+            content = Content.objects.filter(title__iexact=title)
             content_list = [model_to_dict(content) for content in content]
             if len(content_list) == 0:
                 raise Content.DoesNotExist
